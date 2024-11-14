@@ -1,0 +1,1646 @@
+import nltk
+
+from nltk.tokenize import word_tokenize
+
+from nltk.stem import WordNetLemmatizer
+
+from nltk.corpus import stopwords
+ 
+# Download necessary NLTK datasets (run this once)
+
+nltk.download('punkt')
+
+nltk.download('wordnet')
+
+nltk.download('stopwords')
+ 
+def get_root_words(sentence):
+
+    # Initialize the lemmatizer and stopwords
+
+    lemmatizer = WordNetLemmatizer()
+
+    stop_words = set(stopwords.words('english'))
+
+    # Tokenize the sentence
+
+    words = word_tokenize(sentence)
+
+    # Lemmatize each word, remove stopwords, and keep only root words
+
+    root_words = [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+
+    return root_words
+ 
+# Example usage:
+
+sentence = input("Enter a sentence: ")
+
+root_words = get_root_words(sentence)
+
+print("Root words:", root_words)
+
+ 
+nltk.download('punkt_tab')
+ 
+Open VS Code and press Ctrl+Shift+P to open the Command Palette.
+Type and select Azure Functions: Create New Project....
+Choose a folder where you want to store your project, or create a new one.
+Select Python as the language.
+Select Virtual Environment (this will automatically create a virtual environment for you).
+Select the Python version (ensure it is at least Python 3.8).
+Choose HTTP Trigger as the template for your first function.
+Name your function lemmatize.
+Choose Anonymous authentication level (or Function if you need more security).
+VS Code will automatically create the following structure for your Azure Functions project:
+perlCopy codemy-azure-function-app/
+│
+├── .vscode/              # VS Code workspace settings├── lemmatize/            # Folder for the function│   ├── __init__.py       # Function code│   ├── function.json     # Function settings
+├── requirements.txt      # List of dependencies
+├── host.json             # Global function app settings
+└── local.settings.json   # Local settings for development
+3. Add the Lemmatization Code
+Edit the lemmatize/__init__.py file to implement the lemmatization logic using NLTK. Below is the complete Python code for your function:
+lemmatize/__init__.py:
+pythonCopy codeimport loggingimport nltkfrom nltk.tokenize import word_tokenizefrom nltk.stem import WordNetLemmatizerfrom nltk.corpus import stopwordsimport azure.functions as func
+# Download necessary NLTK datasets (run this only once)nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('stopwords')
+# Initialize lemmatizer and stopwordslemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+def lemmatize_sentence(sentence: str):
+    """Lemmatizes words from a sentence and removes stopwords."""    words = word_tokenize(sentence)    root_words = [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+    return root_words
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    """Main function to handle HTTP requests."""    logging.info('Processing a request to lemmatize a sentence.')
+    # Get the sentence from the query parameters or body    sentence = req.params.get('sentence')
+    if not sentence:
+        try:
+            req_body = req.get_json()        except ValueError:
+            passelse:
+            sentence = req_body.get('sentence')
+    if not sentence:
+        return func.HttpResponse(
+            "Please provide a sentence in the query string or in the request body.",
+            status_code=400
+        )
+    # Lemmatize the sentence
+    root_words = lemmatize_sentence(sentence)
+    # Return the root words in JSON formatreturn func.HttpResponse(
+        f'{{"root_words": {root_words}}}',
+        mimetype="application/json",
+        status_code=200
+    )
+ 
+4. Install Dependencies
+Before running the function, make sure to install the required Python dependencies. In your project folder, open a terminal in VS Code and run:
+bashCopy codepip install -r requirements.txt
+The requirements.txt file should include the necessary dependencies, such as:
+Copy codeazure-functions
+nltk
+5. Test the Function Locally
+Run the function locally:
+In VS Code, press F5 or open the Command Palette (Ctrl+Shift+P), then select Azure Functions: Start Debugging.
+The function will run locally, and the terminal should show an address like http://localhost:7071/api/lemmatize.
+Test the endpoint: You can now send an HTTP request to the local URL to test your function. You can use curl or Postman to do this.
+
+Example with curl:
+ 
+Response:
+jsonCopy code{"root_words": ["cat", "run", "faster", "dog"]}
+bashCopy codecurl -X GET "http://localhost:7071/api/lemmatize?sentence=The+cats+were+running+faster+than+the+dogs."
+6. Deploy the Function to Azure
+Sign in to your Azure account: In VS Code, open the Azure tab (left sidebar), then click Sign in to Azure if you’re not already signed in.
+Create a Function App in Azure:
+In the Azure tab, find Functions and right-click on Functions under your subscription.
+Select Create Function App in Azure.
+Follow the prompts to choose a subscription, a resource group, and a region.
+Choose Python as the runtime stack and the correct Python version.
+Create or select an existing Storage account for the function app.
+Deploy the Function: Once the Function App is created, you can deploy your local project to Azure:
+In VS Code, press Ctrl+Shift+P and select Azure Functions: Deploy to Function App.
+Select the Function App you just created.
+VS Code will upload your function to Azure and deploy it.
+7. Test the Deployed Function
+Once deployed, the function will be available at a public URL, which you can find in the Azure Portal:
+Go to the Azure Portal.
+Find the Function App you just created.
+Navigate to Functions > lemmatize > Get Function URL.
+Alternatively, you can use the Azure CLI to get the function URL:
+bashCopy codeaz functionapp function show --name lemmatize --resource-group <your-resource-group> --function-name lemmatize --query "invokeUrlTemplate"
+Now you can test it by sending an HTTP request to the URL. Here’s an example curl request:
+bashCopy codecurl -X GET "https://<your-function-app-name>.azurewebsites.net/api/lemmatize?sentence=The+cats+were+running+faster+than+the+dogs."
+8. Monitor and Manage the Function
+You can monitor logs and view function usage via the Azure Portal.
+Go to Function App > Monitor to view execution logs, metrics, and other details.
+Conclusion
+You have now successfully created and deployed a serverless Azure Function to process sentences and lemmatize them. The Azure Functions extension for VS Code provides a streamlined workflow for local development, testing, and deployment, making it easy to manage your serverless functions directly from the editor.
+This setup is ideal for small to medium APIs that need to scale automatically without managing the underlying infrastructure, and it's a good alternative to AWS Lambda in the Azure ecosystem.
+4o mini
+ 
+ 
+ 
+ 
+ 
+ChatGPT can make mistakes. Check important info.
+?
+ 
+ 
+import logging
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import azure.functions as func
+ 
+# Download necessary NLTK datasets (run this only once)
+nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('stopwords')
+ 
+# Initialize lemmatizer and stopwords
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+ 
+def lemmatize_sentence(sentence: str):
+    """Lemmatizes words from a sentence and removes stopwords."""
+    words = word_tokenize(sentence)
+    root_words = [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+    return root_words
+ 
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    """Main function to handle HTTP requests."""
+    logging.info('Processing a request to lemmatize a sentence.')
+ 
+    # Get the sentence from the query parameters or body
+    sentence = req.params.get('sentence')
+    if not sentence:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            sentence = req_body.get('sentence')
+ 
+    if not sentence:
+        return func.HttpResponse(
+            "Please provide a sentence in the query string or in the request body.",
+            status_code=400
+        )
+ 
+    # Lemmatize the sentence
+    root_words = lemmatize_sentence(sentence)
+ 
+    # Return the root words in JSON format
+    return func.HttpResponse(
+        f'{{"root_words": {root_words}}}',
+        mimetype="application/json",
+        status_code=200
+    )
+ 
+ 
+beyondhumanlemmapi.azurewebsites.net/api/lemmatize
+ 
+https://<your-function-app-name>.azurewebsites.net/api/lemmatize?sentence=The+cats+are+running+faster
+
+ 
+import streamlit as st
+
+import requests
+ 
+# Set the title of the Streamlit app
+
+st.title("Lemmatize Your Sentence")
+ 
+# Input box to get sentence from the user
+
+sentence_input = st.text_input("Enter a sentence:", "")
+ 
+# If the user has entered a sentence
+
+if sentence_input:
+
+    # Azure Function endpoint (replace with your actual function URL)
+
+    url = "https://beyondhumanlemmapi.azurewebsites.net/api/lemmatize"
+ 
+    # Send the sentence as a query parameter to the Azure Function
+
+    # If you're using a POST method, change 'params' to 'json' and 'GET' to 'POST'.
+
+    try:
+
+        response = requests.get(url, params={"sentence": sentence_input})
+ 
+        # Check if the response status code is OK (200)
+
+        if response.status_code == 200:
+
+            data = response.json()
+
+            lemmatized_words = data.get('root_words', [])
+
+            st.write(f"Lemmatized words: {lemmatized_words}")
+
+        else:
+
+            st.error(f"Error: {response.status_code}, {response.text}")
+
+    except Exception as e:
+
+        st.error(f"An error occurred: {str(e)}")
+
+ 
+import streamlit as st
+
+import requests
+ 
+# Set the title of the Streamlit app
+
+st.title("Lemmatize Your Sentence")
+ 
+# Input box to get sentence from the user
+
+sentence_input = st.text_input("Enter a sentence:", "")
+ 
+# If the user has entered a sentence
+
+if sentence_input:
+
+    # Azure Function endpoint (replace with your actual function URL)
+
+    url = "https://beyondhumanlemmapi.azurewebsites.net/api/lemmatize"
+ 
+    # Send the sentence as a query parameter to the Azure Function
+
+    try:
+
+        response = requests.get(url, params={"sentence": sentence_input})
+ 
+        # Print raw response content for debugging
+
+        st.write("Response raw text: ", response.text)
+ 
+        # Check if the response status code is OK (200)
+
+        if response.status_code == 200:
+
+            # Attempt to parse the JSON response
+
+            try:
+
+                data = response.json()
+
+                lemmatized_words = data.get('root_words', [])
+
+                st.write(f"Lemmatized words: {lemmatized_words}")
+
+            except ValueError as e:
+
+                st.error(f"Error parsing JSON response: {e}")
+
+        else:
+
+            st.error(f"Error: {response.status_code}, {response.text}")
+
+    except Exception as e:
+
+        st.error(f"An error occurred: {str(e)}")
+
+ 
+json.dumps({"root_words": root_words}),
+ 
+import logging
+import nltk
+import json
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import azure.functions as func
+ 
+# Download necessary NLTK datasets if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+ 
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+ 
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+ 
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+ 
+# Initialize lemmatizer and stopwords
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+ 
+# Define function to lemmatize a sentence
+def lemmatize_sentence(sentence: str):
+    """Lemmatizes words from a sentence and removes stopwords."""
+    words = word_tokenize(sentence)
+    return [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+ 
+# Create a Function App instance
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+ 
+# Define route for lemmatize function
+@app.route(route="lemmatize")
+def lemmatize(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing a request to lemmatize a sentence.')
+ 
+    # Get the sentence from query parameters
+    sentence = req.params.get('sentence')
+    logging.info(f"Received sentence: {sentence}")
+ 
+    if not sentence:
+        try:
+            # If no sentence in query, try to get it from the body
+            req_body = req.get_json()
+            sentence = req_body.get('sentence')
+            logging.info(f"Received sentence from body: {sentence}")
+        except ValueError:
+            logging.error("No sentence found in request body")
+ 
+    # If no sentence is found, return an error message
+    if not sentence:
+        logging.error("No sentence provided in query or body.")
+        return func.HttpResponse(
+            "Please provide a sentence in the query string or in the request body.",
+            status_code=400
+        )
+ 
+    try:
+        # Lemmatize the sentence
+        root_words = lemmatize_sentence(sentence)
+        logging.info(f"Lemmatized words: {root_words}")
+        root_words_str = '-'.join(root_words)
+ 
+        return func.HttpResponse(
+            json.dumps({"root_words": root_words_str}),
+            mimetype="application/json",
+            status_code=200
+        )
+    except Exception as e:
+        logging.error(f"Error processing sentence: {str(e)}")
+        return func.HttpResponse(
+            "An error occurred while processing the sentence.",
+            status_code=500
+        )
+ 
+https://beyondhumancosmosmongodb.mongo.cosmos.azure.com:443/
+ 
+"sentence": sentence,
+                "root_words": root_words_str,
+                "value": "Some_value_to_store"
+ 
+BeyondHuman_CosmosMongodb
+ 
+cosmosmongodbcollection
+ 
+mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@
+
+
+-----------------------
+nltk.download('averaged_perceptron_tagger')
+ 
+# Initialize the stemmer and lemmatizer
+stemmer = PorterStemmer()
+lemmatizer = WordNetLemmatizer()
+ 
+# Define stopwords
+stop_words = set(stopwords.words('english'))
+ 
+# Example sentence
+sentence = "She is loving her new job and playing outside."
+ 
+# Tokenize the sentence
+words = word_tokenize(sentence)
+ 
+# Perform POS tagging to identify verbs, nouns, etc.
+tagged_words = pos_tag(words)
+ 
+# Apply both stemming and lemmatization
+processed_words = []
+ 
+for word, tag in tagged_words:
+    word_lower = word.lower()
+ 
+    # Skip stopwords and non-alphabetic words
+    if word_lower not in stop_words and word.isalpha():
+        if tag.startswith('VB'):  # If the word is a verb, use lemmatization
+            processed_words.append(lemmatizer.lemmatize(word_lower, pos="v"))
+        else:  # Use stemming for other words
+            processed_words.append(stemmer.stem(word_lower))
+ 
+ 
+import logging
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import azure.functions as func
+import json
+import pymongo
+from pymongo import MongoClient
+import os
+ 
+# Download necessary NLTK datasets if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+ 
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+ 
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+ 
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+ 
+# Initialize lemmatizer and stopwords
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+ 
+# MongoDB connection details (use your actual connection string)
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+COLLECTION_NAME = "cosmosmongodbcollection"
+ 
+# Initialize MongoDB client
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+ 
+# Define function to lemmatize a sentence
+def lemmatize_sentence(sentence: str):
+    """Lemmatizes words from a sentence and removes stopwords."""
+    words = word_tokenize(sentence)
+    return [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+ 
+# Create a Function App instance
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+ 
+# Define route for lemmatize function
+@app.route(route="lemmatize")
+def lemmatize(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing a request to lemmatize a sentence.')
+ 
+    # Get the sentence from query parameters
+    sentence = req.params.get('sentence')
+ 
+    # If the sentence is not in query parameters, check the request body
+    if not sentence:
+        try:
+            req_body = req.get_json()
+            sentence = req_body.get('sentence')
+        except ValueError:
+            pass
+ 
+    # If no sentence is provided, return an error message
+    if not sentence:
+        return func.HttpResponse(
+            '{"error": "Please provide a sentence in the query string or in the request body."}',
+            mimetype="application/json",
+            status_code=400
+        )
+ 
+    # Lemmatize the sentence
+    root_words = lemmatize_sentence(sentence)
+ 
+    # Join the root words into a single string separated by hyphens
+    root_words_str = '-'.join(root_words)
+    existing_document = collection.find_one({"root_words": root_words_str})
+ 
+    if existing_document:
+        # If document exists, return the value field (assuming the value field is 'value')
+        value_field = existing_document.get('value', 'No value found')
+        return func.HttpResponse(
+            f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}',
+            mimetype="application/json",
+            status_code=200
+        )
+    else:
+        # If document does not exist, insert a new document
+        try:
+            document = {
+                "sentence": sentence,
+                "root_words": root_words_str,
+                "value": "Some_value_to_store"
+            }
+            collection.insert_one(document)  # Insert the document into MongoDB
+            logging.info(f"Document inserted: {document}")
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+   
+            return func.HttpResponse(
+                f'{{"root_words": "{root_words_str}", "found_in_db": false}}',
+                mimetype="application/json",
+                status_code=200
+            )
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+            return func.HttpResponse(
+                '{"error": "Error inserting document to MongoDB."}',
+                mimetype="application/json",
+                status_code=500
+            )
+ 
+ 
+import logging
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer, PorterStemmer
+import azure.functions as func
+import json
+import pymongo
+from pymongo import MongoClient
+import os
+# Download necessary NLTK datasets if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+# Initialize lemmatizer, stemmer, and stopwords
+lemmatizer = WordNetLemmatizer()
+stemmer = PorterStemmer()
+stop_words = set(stopwords.words('english'))
+# MongoDB connection details (use your actual connection string)
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+COLLECTION_NAME = "cosmosmongodbcollection"
+# Initialize MongoDB client
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+# Define function to lemmatize and stem a sentence
+def process_sentence(sentence: str):
+    """Stems non-verbs and lemmatizes verbs from a sentence, removing stopwords."""
+    words = word_tokenize(sentence)
+    processed_words = []
+    for word in words:
+        word_lower = word.lower()
+        # Skip stopwords and non-alphabetic words
+        if word_lower not in stop_words and word.isalpha():
+            # Stemming for non-verbs, lemmatizing verbs
+            if word_lower in ["am", "is", "are", "was", "were", "be", "been", "being"]:
+                # For certain common verbs, we apply lemmatization
+                processed_words.append(lemmatizer.lemmatize(word_lower, pos="v"))
+            else:
+                # Apply stemming for non-verbs
+                processed_words.append(stemmer.stem(word_lower))
+    return processed_words
+# Create a Function App instance
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+# Define route for lemmatize function
+@app.route(route="process_sentence")
+def process(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing a request to lemmatize and stem a sentence.')
+    # Get the sentence from query parameters
+    sentence = req.params.get('sentence')
+    # If the sentence is not in query parameters, check the request body
+    if not sentence:
+        try:
+            req_body = req.get_json()
+            sentence = req_body.get('sentence')
+        except ValueError:
+            pass
+    # If no sentence is provided, return an error message
+    if not sentence:
+        return func.HttpResponse(
+            '{"error": "Please provide a sentence in the query string or in the request body."}',
+            mimetype="application/json",
+            status_code=400
+        )
+    # Process the sentence: apply both stemming and lemmatization
+    processed_words = process_sentence(sentence)
+    root_words_str = '-'.join(processed_words)
+    # Check if the processed words exist in the MongoDB collection
+    existing_document = collection.find_one({"root_words": root_words_str})
+    if existing_document:
+        # If document exists, return the value field (assuming the value field is 'value')
+        value_field = existing_document.get('value', 'No value found')
+        return func.HttpResponse(
+            f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}',
+            mimetype="application/json",
+            status_code=200
+        )
+    else:
+        # If document does not exist, insert a new document
+        try:
+            document = {
+                "sentence": sentence,
+                "root_words": root_words_str,
+                "value": "Some_value_to_store"
+            }
+            collection.insert_one(document)  # Insert the document into MongoDB
+            logging.info(f"Document inserted: {document}")
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+            return func.HttpResponse(
+                f'{{"root_words": "{root_words_str}", "found_in_db": false}}',
+                mimetype="application/json",
+                status_code=200
+            )
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+            return func.HttpResponse(
+                '{"error": "Error inserting document to MongoDB."}',
+                mimetype="application/json",
+                status_code=500
+            )
+ 
+ 
+import logging
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import azure.functions as func
+import json
+import pymongo
+from pymongo import MongoClient
+import os
+ 
+# Download necessary NLTK datasets if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+ 
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+ 
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+ 
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+ 
+# Initialize lemmatizer and stopwords
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+ 
+# MongoDB connection details (use your actual connection string)
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+COLLECTION_NAME = "cosmosmongodbcollection"
+ 
+# Initialize MongoDB client
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+ 
+# Define function to lemmatize a sentence
+def lemmatize_sentence(sentence: str):
+    """Lemmatizes words from a sentence and removes stopwords."""
+    words = word_tokenize(sentence)
+    return [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+ 
+# Create a Function App instance
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+ 
+# Define route for lemmatize function
+@app.route(route="lemmatize")
+def lemmatize(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing a request to lemmatize a sentence.')
+ 
+    # Get the sentence from query parameters
+    sentence = req.params.get('sentence')
+ 
+    # If the sentence is not in query parameters, check the request body
+    if not sentence:
+        try:
+            req_body = req.get_json()
+            sentence = req_body.get('sentence')
+        except ValueError:
+            pass
+ 
+    # If no sentence is provided, return an error message
+    if not sentence:
+        return func.HttpResponse(
+            '{"error": "Please provide a sentence in the query string or in the request body."}',
+            mimetype="application/json",
+            status_code=400
+        )
+ 
+    # Lemmatize the sentence
+    root_words = lemmatize_sentence(sentence)
+ 
+    # Join the root words into a single string separated by hyphens
+    root_words_str = '-'.join(root_words)
+    existing_document = collection.find_one({"root_words": root_words_str})
+ 
+    if existing_document:
+        # If document exists, return the value field (assuming the value field is 'value')
+        value_field = existing_document.get('value', 'No value found')
+        return func.HttpResponse(
+            f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}',
+            mimetype="application/json",
+            status_code=200
+        )
+    else:
+        # If document does not exist, insert a new document
+        try:
+            document = {
+                "sentence": sentence,
+                "root_words": root_words_str,
+                "value": "Some_value_to_store"
+            }
+            collection.insert_one(document)  # Insert the document into MongoDB
+            logging.info(f"Document inserted: {document}")
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+   
+            return func.HttpResponse(
+                f'{{"root_words": "{root_words_str}", "found_in_db": false}}',
+                mimetype="application/json",
+                status_code=200
+            )
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+            return func.HttpResponse(
+                '{"error": "Error inserting document to MongoDB."}',
+                mimetype="application/json",
+                status_code=500
+            )
+ 
+correct codde 
+ 
+import logging
+
+import nltk
+
+from nltk.tokenize import word_tokenize
+
+from nltk.corpus import stopwords
+
+from nltk.stem import WordNetLemmatizer, PorterStemmer
+
+import azure.functions as func
+
+import json
+
+import pymongo
+
+from pymongo import MongoClient
+
+import os
+ 
+# Download necessary NLTK datasets if not already downloaded
+
+try:
+
+    nltk.data.find('tokenizers/punkt')
+
+except LookupError:
+
+    nltk.download('punkt')
+ 
+try:
+
+    nltk.data.find('corpora/stopwords')
+
+except LookupError:
+
+    nltk.download('stopwords')
+ 
+try:
+
+    nltk.data.find('corpora/wordnet')
+
+except LookupError:
+
+    nltk.download('wordnet')
+ 
+# Initialize lemmatizer, stemmer, and stopwords
+
+lemmatizer = WordNetLemmatizer()
+
+stemmer = PorterStemmer()
+
+stop_words = set(stopwords.words('english'))
+ 
+# MongoDB connection details (use your actual connection string)
+
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+
+COLLECTION_NAME = "cosmosmongodbcollection"
+ 
+# Initialize MongoDB client
+
+client = MongoClient(MONGO_URI)
+
+db = client[DATABASE_NAME]
+
+collection = db[COLLECTION_NAME]
+ 
+# Define function to lemmatize and stem a sentence
+
+def process_sentence(sentence: str):
+
+    """Stems non-verbs and lemmatizes verbs from a sentence, removing stopwords."""
+
+    words = word_tokenize(sentence)
+
+    processed_words = []
+ 
+    for word in words:
+
+        word_lower = word.lower()
+ 
+        # Skip stopwords and non-alphabetic words
+
+        if word_lower not in stop_words and word.isalpha():
+
+            # Stemming for non-verbs, lemmatizing verbs
+
+            if word_lower in ["am", "is", "are", "was", "were", "be", "been", "being"]:
+
+                # For certain common verbs, we apply lemmatization
+
+                processed_words.append(lemmatizer.lemmatize(word_lower, pos="v"))
+
+            else:
+
+                # Apply stemming for non-verbs
+
+                processed_words.append(stemmer.stem(word_lower))
+ 
+    return processed_words
+ 
+# Create a Function App instance
+
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+ 
+# Define route for lemmatize function
+
+@app.route(route="process_sentence")
+
+def process(req: func.HttpRequest) -> func.HttpResponse:
+
+    logging.info('Processing a request to lemmatize and stem a sentence.')
+ 
+    # Get the sentence from query parameters
+
+    sentence = req.params.get('sentence')
+ 
+    # If the sentence is not in query parameters, check the request body
+
+    if not sentence:
+
+        try:
+
+            req_body = req.get_json()
+
+            sentence = req_body.get('sentence')
+
+        except ValueError:
+
+            pass
+ 
+    # If no sentence is provided, return an error message
+
+    if not sentence:
+
+        return func.HttpResponse(
+
+            '{"error": "Please provide a sentence in the query string or in the request body."}',
+
+            mimetype="application/json",
+
+            status_code=400
+
+        )
+ 
+    # Process the sentence: apply both stemming and lemmatization
+
+    processed_words = process_sentence(sentence)
+
+    root_words_str = '-'.join(processed_words)
+
+    # Check if the processed words exist in the MongoDB collection
+
+    existing_document = collection.find_one({"root_words": root_words_str})
+ 
+    if existing_document:
+
+        # If document exists, return the value field (assuming the value field is 'value')
+
+        value_field = existing_document.get('value', 'No value found')
+
+        return func.HttpResponse(
+
+            f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}',
+
+            mimetype="application/json",
+
+            status_code=200
+
+        )
+
+    else:
+
+        # If document does not exist, insert a new document
+
+        try:
+
+            document = {
+
+                "sentence": sentence,
+
+                "root_words": root_words_str,
+
+                "value": "Some_value_to_store"
+
+            }
+
+            collection.insert_one(document)  # Insert the document into MongoDB
+
+            logging.info(f"Document inserted: {document}")
+
+        except Exception as e:
+
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+ 
+            return func.HttpResponse(
+
+                f'{{"root_words": "{root_words_str}", "found_in_db": false}}',
+
+                mimetype="application/json",
+
+                status_code=200
+
+            )
+
+        except Exception as e:
+
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+
+            return func.HttpResponse(
+
+                '{"error": "Error inserting document to MongoDB."}',
+
+                mimetype="application/json",
+
+                status_code=500
+
+            )
+
+ 
+confluence_gpt
+ 
+  process: https://beyondhumanlemmapi.azurewebsites.net/api/confluence_gpt
+ 
+ 
+import logging
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer, PorterStemmer
+import azure.functions as func
+import json
+import pymongo
+from pymongo import MongoClient
+import os
+ 
+# Download necessary NLTK datasets if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+ 
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+ 
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+ 
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+ 
+# Initialize lemmatizer, stemmer, and stopwords
+lemmatizer = WordNetLemmatizer()
+stemmer = PorterStemmer()
+stop_words = set(stopwords.words('english'))
+ 
+# MongoDB connection details (use your actual connection string)
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+COLLECTION_NAME = "cosmosmongodbcollection"
+ 
+# Initialize MongoDB client
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+ 
+# Define function to lemmatize and stem a sentence
+def process_sentence(sentence: str):
+    """Stems non-verbs and lemmatizes verbs from a sentence, removing stopwords."""
+    words = word_tokenize(sentence)
+    processed_words = []
+ 
+    for word in words:
+        word_lower = word.lower()
+ 
+        # Skip stopwords and non-alphabetic words
+        if word_lower not in stop_words and word.isalpha():
+            # Stemming for non-verbs, lemmatizing verbs
+            if word_lower in ["am", "is", "are", "was", "were", "be", "been", "being"]:
+                # For certain common verbs, we apply lemmatization
+                processed_words.append(lemmatizer.lemmatize(word_lower, pos="v"))
+            else:
+                # Apply stemming for non-verbs
+                processed_words.append(stemmer.stem(word_lower))
+ 
+    return processed_words
+ 
+# Create a Function App instance
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+ 
+# Define route for lemmatize function
+@app.route(route="confluence_gpt")
+def process(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing a request to lemmatize and stem a sentence.')
+ 
+    # Get the sentence from query parameters
+    sentence = req.params.get('sentence')
+ 
+    # If the sentence is not in query parameters, check the request body
+    if not sentence:
+        try:
+            req_body = req.get_json()
+            sentence = req_body.get('sentence')
+        except ValueError:
+            pass
+ 
+    # If no sentence is provided, return an error message
+    if not sentence:
+        return func.HttpResponse(
+            '{"error": "Please provide a sentence in the query string or in the request body."}',
+            mimetype="application/json",
+            status_code=400
+        )
+ 
+    # Process the sentence: apply both stemming and lemmatization
+    processed_words = process_sentence(sentence)
+    root_words_str = '-'.join(processed_words)
+    # Check if the processed words exist in the MongoDB collection
+    existing_document = collection.find_one({"root_words": root_words_str})
+ 
+    if existing_document:
+        # If document exists, return the value field (assuming the value field is 'value')
+        value_field = existing_document.get('value', 'No value found')
+        return func.HttpResponse(
+            f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}',
+            mimetype="application/json",
+            status_code=200
+        )
+    else:
+        # If document does not exist, insert a new document
+        try:
+            document = {
+                "sentence": sentence,
+                "root_words": root_words_str,
+                "value": "Some_value_to_store"
+            }
+            collection.insert_one(document)  # Insert the document into MongoDB
+            logging.info(f"Document inserted: {document}")
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+ 
+            return func.HttpResponse(
+                f'{{"root_words": "{root_words_str}", "found_in_db": false}}',
+                mimetype="application/json",
+                status_code=200
+            )
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+            return func.HttpResponse(
+                '{"error": "Error inserting document to MongoDB."}',
+                mimetype="application/json",
+                status_code=500
+            )
+ 
+f1d10e27aa074f40bd06661117fdf416
+ 
+https://genai-openai-beyondhuman.openai.azure.com/
+ 
+import streamlit as st
+import requests
+ 
+# Set the title of the Streamlit app
+st.title("Lemmatize Your Sentence")
+ 
+# Input box to get sentence from the user
+sentence_input = st.text_input("Enter a sentence:", "")
+ 
+# If the user has entered a sentence
+if sentence_input:
+    # Azure Function endpoint (replace with your actual function URL)
+    url = "https://beyondhumanlemmapi.azurewebsites.net/api/confluence_gpt"
+ 
+    # Send the sentence as a query parameter to the Azure Function
+    try:
+        response = requests.get(url, params={"sentence": sentence_input})
+ 
+        # Print raw response content for debugging
+        st.write("Response raw text: ", response.text)
+        st.write("Statsu code: ", response.status_code)
+ 
+        # Check if the response status code is OK (200)
+        if response.status_code == 200:
+            # Attempt to parse the JSON response
+            try:
+                st.write("I'm here")
+                data = response.json()
+                st.write("I'm here2: ",data)
+                lemmatized_words = data.get('root_words', [])
+                st.write(f"Lemmatized words: {lemmatized_words}")
+            except ValueError as e:
+                st.error(f"Error parsing JSON response: {e}")
+        else:
+            st.error(f"Error: {response.status_code}, {response.text}")
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+ 
+import logging
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer, PorterStemmer
+import azure.functions as func
+import json
+import pymongo
+import uuid
+from pymongo import MongoClient
+from azure.ai.openai import OpenAIClient
+from azure.core.credentials import AzureKeyCredential
+ 
+# Download necessary NLTK datasets if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+ 
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+ 
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+ 
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+ 
+# Initialize lemmatizer, stemmer, and stopwords
+lemmatizer = WordNetLemmatizer()
+stemmer = PorterStemmer()
+stop_words = set(stopwords.words('english'))
+ 
+# MongoDB connection details (use your actual connection string)
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+COLLECTION_NAME = "cosmosmongodbcollection"
+ 
+# Initialize MongoDB client
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+ 
+# Initialize Azure OpenAI client
+OPENAI_API_KEY = "f1d10e27aa074f40bd06661117fdf416"  # Azure OpenAI API Key
+OPENAI_ENDPOINT = "https://genai-openai-beyondhuman.openai.azure.com/"  # Azure OpenAI Endpoint
+openai_client = OpenAIClient(endpoint=OPENAI_ENDPOINT, credential=AzureKeyCredential(OPENAI_API_KEY))
+ 
+def generate_unique_key_value():
+    return str(uuid.uuid4())
+ 
+# Define function to lemmatize and stem a sentence
+def process_sentence(sentence: str):
+    """Stems non-verbs and lemmatizes verbs from a sentence, removing stopwords."""
+    words = word_tokenize(sentence)
+    processed_words = []
+ 
+    for word in words:
+        word_lower = word.lower()
+ 
+        # Skip stopwords and non-alphabetic words
+        if word_lower not in stop_words and word.isalpha():
+            # Stemming for non-verbs, lemmatizing verbs
+            if word_lower in ["am", "is", "are", "was", "were", "be", "been", "being"]:
+                # For certain common verbs, we apply lemmatization
+                processed_words.append(lemmatizer.lemmatize(word_lower, pos="v"))
+            else:
+                # Apply stemming for non-verbs
+                processed_words.append(stemmer.stem(word_lower))
+ 
+    return processed_words
+ 
+# Create a Function App instance
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+ 
+# Define route for lemmatize function
+@app.route(route="lemmatize")
+def process(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing a request to lemmatize and stem a sentence.')
+ 
+    # Get the sentence from query parameters
+    sentence = req.params.get('sentence')
+ 
+    # If the sentence is not in query parameters, check the request body
+    if not sentence:
+        try:
+            req_body = req.get_json()
+            sentence = req_body.get('sentence')
+        except ValueError:
+            pass
+ 
+    # If no sentence is provided, return an error message
+    if not sentence:
+        return func.HttpResponse(
+            '{"error": "Please provide a sentence in the query string or in the request body."}',
+            mimetype="application/json",
+            status_code=400
+        )
+ 
+    # Process the sentence: apply both stemming and lemmatization
+    processed_words = process_sentence(sentence)
+    root_words_str = '-'.join(processed_words)
+ 
+    # Check if the processed words exist in the MongoDB collection
+    existing_document = collection.find_one({"root_words": root_words_str})
+ 
+    if existing_document:
+        # If document exists, return the value field (assuming the value field is 'value')
+        value_field = existing_document.get('value', 'No value found')
+        return func.HttpResponse(
+            f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}',
+            mimetype="application/json",
+            status_code=200
+        )
+    else:
+        # If document does not exist, use Azure OpenAI to generate a response
+        try:
+            response = openai_client.completions.create(
+                model="gpt-4",  # You can choose a different model like gpt-3.5, gpt-4, etc.
+                prompt=f"Generate information or a relevant response for the sentence: {sentence}",
+                max_tokens=100
+            )
+            print("Connected successfully!")
+            # Extract the value from the OpenAI response
+            ai_generated_value = response.choices[0].text.strip()
+            unique_key_value = generate_unique_key_value()
+            # Insert into MongoDB
+            document = {
+                "sentence": sentence,
+                "root_words": root_words_str,
+                "value": ai_generated_value,  # Store AI-generated value
+                "uniqueKey": unique_key_value  # Ensure this field is included
+            }
+            collection.insert_one(document)
+ 
+            logging.info(f"Document inserted: {document}")
+ 
+            return func.HttpResponse(
+                f'{{"root_words": "{root_words_str}", "found_in_db": false, "value": "{ai_generated_value}"}}',
+                mimetype="application/json",
+                status_code=200
+            )
+        except Exception as e:
+            logging.error(f"Error calling Azure OpenAI: {str(e)}")
+            return func.HttpResponse(
+                '{"error": "Error processing the request with Azure OpenAI."}',
+                mimetype="application/json",
+                status_code=500
+            )
+ 
+import logging
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import azure.functions as func
+import json
+import pymongo
+from pymongo import MongoClient
+import os
+ 
+# Download necessary NLTK datasets if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+ 
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+ 
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+ 
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+ 
+# Initialize lemmatizer and stopwords
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+ 
+# MongoDB connection details (use your actual connection string)
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+COLLECTION_NAME = "cosmosmongodbcollection"
+ 
+# Initialize MongoDB client
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
+ 
+# Define function to lemmatize a sentence
+def lemmatize_sentence(sentence: str):
+    """Lemmatizes words from a sentence and removes stopwords."""
+    words = word_tokenize(sentence)
+    return [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+ 
+# Create a Function App instance
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+ 
+# Define route for lemmatize function
+@app.route(route="lemmatize")
+def lemmatize(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Processing a request to lemmatize a sentence.')
+ 
+    # Get the sentence from query parameters
+    sentence = req.params.get('sentence')
+ 
+    # If the sentence is not in query parameters, check the request body
+    if not sentence:
+        try:
+            req_body = req.get_json()
+            sentence = req_body.get('sentence')
+        except ValueError:
+            pass
+ 
+    # If no sentence is provided, return an error message
+    if not sentence:
+        return func.HttpResponse(
+            '{"error": "Please provide a sentence in the query string or in the request body."}',
+            mimetype="application/json",
+            status_code=400
+        )
+ 
+    # Lemmatize the sentence
+    root_words = lemmatize_sentence(sentence)
+ 
+    # Join the root words into a single string separated by hyphens
+    root_words_str = '-'.join(root_words)
+    existing_document = collection.find_one({"root_words": root_words_str})
+ 
+    if existing_document:
+        # If document exists, return the value field (assuming the value field is 'value')
+        value_field = existing_document.get('value', 'No value found')
+        return func.HttpResponse(
+            f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}',
+            mimetype="application/json",
+            status_code=200
+        )
+    else:
+        # If document does not exist, insert a new document
+        try:
+            document = {
+                "sentence": sentence,
+                "root_words": root_words_str,
+                "value": "Some_value_to_store"
+            }
+            collection.insert_one(document)  # Insert the document into MongoDB
+            logging.info(f"Document inserted: {document}")
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+   
+            return func.HttpResponse(
+                f'{{"root_words": "{root_words_str}", "found_in_db": false}}',
+                mimetype="application/json",
+                status_code=200
+            )
+        except Exception as e:
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+            return func.HttpResponse(
+                '{"error": "Error inserting document to MongoDB."}',
+                mimetype="application/json",
+                status_code=500
+            )
+ 
+ 
+import logging
+
+import nltk
+
+from nltk.tokenize import word_tokenize
+
+from nltk.stem import WordNetLemmatizer
+
+from nltk.corpus import stopwords
+
+import pymongo
+
+import os
+ 
+# Download necessary NLTK datasets if not already downloaded
+
+try:
+
+    nltk.data.find('tokenizers/punkt')
+
+except LookupError:
+
+    nltk.download('punkt')
+ 
+try:
+
+    nltk.data.find('tokenizers/punkt_tab')
+
+except LookupError:
+
+    nltk.download('punkt_tab')
+ 
+try:
+
+    nltk.data.find('corpora/stopwords')
+
+except LookupError:
+
+    nltk.download('stopwords')
+ 
+try:
+
+    nltk.data.find('corpora/wordnet')
+
+except LookupError:
+
+    nltk.download('wordnet')
+ 
+# Initialize lemmatizer and stopwords
+
+lemmatizer = WordNetLemmatizer()
+
+stop_words = set(stopwords.words('english'))
+ 
+# MongoDB connection details (use your actual connection string)
+
+MONGO_URI = "mongodb://beyondhumancosmosmongodb:8igjEd0wSlV0jFCiAIcDDoQQcSu0xnGXLvP8nGqOM1ttlLH4lyucqnu88vL6lzhoWyK7VG6GSNfKACDb82ADfw==@beyondhumancosmosmongodb.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@beyondhumancosmosmongodb@"  # Store this in the environment variable or hard-code for testing
+
+DATABASE_NAME = "BeyondHuman_CosmosMongodb"
+
+COLLECTION_NAME = "cosmosmongodbcollection"
+ 
+# Initialize MongoDB client
+
+client = pymongo.MongoClient(MONGO_URI)
+
+db = client[DATABASE_NAME]
+
+collection = db[COLLECTION_NAME]
+ 
+# Define function to lemmatize a sentence
+
+def lemmatize_sentence(sentence: str):
+
+    """Lemmatizes words from a sentence and removes stopwords."""
+
+    words = word_tokenize(sentence)
+
+    return [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words and word.isalpha()]
+ 
+def process_sentence(sentence: str):
+
+    """Processes the sentence, checking for existing data in MongoDB or inserting new data."""
+
+    # Lemmatize the sentence
+
+    root_words = lemmatize_sentence(sentence)
+ 
+    # Join the root words into a single string separated by hyphens
+
+    root_words_str = '-'.join(root_words)
+ 
+    # Check if the lemmatized root words exist in MongoDB
+
+    existing_document = collection.find_one({"root_words": root_words_str})
+ 
+    if existing_document:
+
+        # If document exists, return the value field (assuming the value field is 'value')
+
+        value_field = existing_document.get('value', 'No value found')
+
+        return f'{{"root_words": "{root_words_str}", "found_in_db": true, "value": "{value_field}"}}'
+
+    else:
+
+        # If document does not exist, insert a new document
+
+        try:
+
+            document = {
+
+                "sentence": sentence,
+
+                "root_words": root_words_str,
+
+                "value": "Some_value_to_store"  # Placeholder value
+
+            }
+
+            collection.insert_one(document)  # Insert the document into MongoDB
+
+            logging.info(f"Document inserted: {document}")
+
+            return f'{{"root_words": "{root_words_str}", "found_in_db": false}}'
+
+        except Exception as e:
+
+            logging.error(f"Error inserting document to MongoDB: {str(e)}")
+
+            return '{"error": "Error inserting document to MongoDB."}'
+ 
+# Main function to run the script
+
+def main():
+
+    # Example sentence input (this could be taken from user input or another source)
+
+    sentence = input("Enter a sentence to lemmatize and process: ")
+ 
+    if not sentence:
+
+        print('Error: Please provide a sentence.')
+
+        return
+ 
+    # Process the sentence
+
+    result = process_sentence(sentence)
+ 
+    # Print the result
+
+    print(result)
+ 
+if __name__ == "__main__":
+
+    # Set up logging
+
+    logging.basicConfig(level=logging.INFO)
+
+    main()
+
+ 
+  
